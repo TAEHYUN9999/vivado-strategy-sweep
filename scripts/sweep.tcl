@@ -168,12 +168,14 @@ foreach s $strategies {
     flush $csv
     puts ">>> \[$s\] done: progress=$prog WNS=$wns TNS=$tns timing=$timing_met LUT=$lut FF=$ff"
 
-    # archive key artifacts
+    # archive key artifacts into a per-strategy subfolder ($outdir/<strategy>/)
+    set strat_out "$outdir/$s"
+    file mkdir $strat_out
     set bit "$rundir/${top}.bit"
-    if {[file exists $bit]}  { file copy -force $bit  "$outdir/${run}.bit" }
-    if {[file exists $util]} { file copy -force $util "$outdir/${run}_utilization.rpt" }
+    if {[file exists $bit]}  { file copy -force $bit  "$strat_out/${s}.bit" }
+    if {[file exists $util]} { file copy -force $util "$strat_out/${s}_utilization.rpt" }
     set tsum "$rundir/${top}_timing_summary_routed.rpt"
-    if {[file exists $tsum]} { file copy -force $tsum "$outdir/${run}_timing_summary.rpt" }
+    if {[file exists $tsum]} { file copy -force $tsum "$strat_out/${s}_timing_summary.rpt" }
 
     set wnsnum [expr {$wns eq "" ? -1e9 : $wns}]
     lappend results [list $s $run $wnsnum $ok]
@@ -194,20 +196,24 @@ if {$best ne ""} {
 }
 
 # ---- .xsa hardware handoff (includes bitstream) ---------------------------
-proc make_xsa {run outdir} {
+# Writes <outdir>/<strategy>/<strategy>.xsa so each strategy's handoff lives
+# alongside its archived bitstream/reports in the same per-strategy folder.
+proc make_xsa {run xsa_path} {
     puts ">>> writing XSA for $run ..."
+    file mkdir [file dirname $xsa_path]
     open_run $run
-    write_hw_platform -fixed -include_bit -force "$outdir/${run}.xsa"
+    write_hw_platform -fixed -include_bit -force "$xsa_path"
     close_design
-    puts ">>> XSA: $outdir/${run}.xsa"
+    puts ">>> XSA: $xsa_path"
 }
 
 if {$xsa_mode eq "best" && $best ne ""} {
-    make_xsa $best $outdir
+    set bs [string range $best 5 end]   ;# strip "impl_" prefix -> strategy name
+    make_xsa $best "$outdir/$bs/${bs}.xsa"
 } elseif {$xsa_mode eq "all"} {
     foreach r $results {
         lassign $r s run wns ok
-        if {$ok} { make_xsa $run $outdir }
+        if {$ok} { make_xsa $run "$outdir/$s/${s}.xsa" }
     }
 }
 
