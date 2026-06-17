@@ -4,9 +4,11 @@
 
 Performance_Explore
 Performance_ExplorePostRoutePhysOpt
-Performance_ExtraTimingOpt
+Performance_ExploreWithRemap
 Performance_NetDelay_high
+Performance_NetDelay_low
 Performance_Retiming
+Performance_ExtraTimingOpt
 
 # Useful when the design is routing-congested:
 # Congestion_SpreadLogic_high

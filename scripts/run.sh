@@ -17,7 +17,7 @@
 #   --jobs N                -jobs for launch_runs        (default: min(8, nproc))
 #   --outdir DIR            Output dir                   (default: ./vivado_sweep_<timestamp>)
 #   --synth-strategy NAME   Override synth_1 strategy    (default: leave project as-is)
-#   --xsa MODE              best | all | none            (default: best)
+#   --xsa MODE              best | all | none            (default: all)
 #   --dry-run               Validate project + strategies, print plan, launch nothing
 #   --vivado PATH           Path to vivado binary        (default: auto-detect)
 #   -h | --help
@@ -36,7 +36,7 @@ STRATEGIES=""
 JOBS=""
 OUTDIR=""
 SYNTH_STRATEGY=""
-XSA_MODE="best"
+XSA_MODE="all"
 DRYRUN="0"
 VIVADO_BIN="${VIVADO_BIN:-}"
 
