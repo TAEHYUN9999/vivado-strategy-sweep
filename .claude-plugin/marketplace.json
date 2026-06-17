@@ -1,0 +1,13 @@
+{
+  "name": "vivado-strategy-sweep",
+  "owner": {
+    "name": "TAEHYUN9999"
+  },
+  "plugins": [
+    {
+      "name": "vivado-strategy-sweep",
+      "source": "./",
+      "description": "One-command Vivado implementation-strategy sweep: synth once, implement under N strategies, compare WNS/TNS/utilization, archive bitstreams + reports, emit a .xsa for the best run."
+    }
+  ]
+}

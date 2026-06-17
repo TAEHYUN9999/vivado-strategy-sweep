@@ -81,12 +81,79 @@ vivado.log / vivado.jou         # Vivado batch 전체 로그
 이 커맨드는 `run.sh`를 실행한 뒤 `summary.csv`와 타이밍 리포트를 읽어, 순위가
 매겨진 사람이 읽기 좋은 비교표와 함께 best strategy를 알려줍니다.
 
-### 설치
+### 회사 PC에서 처음부터 설치하기 (step by step)
 
-Claude Code 플러그인 위치에 clone 하거나, Claude Code 플러그인 문서에 따라 이
-저장소를 플러그인 소스/마켓플레이스로 추가하세요. 플러그인 매니페스트는
-[`.claude-plugin/plugin.json`](.claude-plugin/plugin.json), 커맨드는
-[`commands/vivado-build.md`](commands/vivado-build.md) 에 있습니다.
+> 전제: 회사 PC에 **Vivado 2023.1**, **git**, **Claude Code**가 설치되어 있고,
+> 이 저장소는 **private** 입니다.
+
+**1) GitHub 인증 (private 저장소 접근용, 최초 1회)**
+
+터미널에서 git이 이 저장소를 받을 수 있어야 합니다. 가장 간단한 방법은 `gh`
+CLI 로그인입니다.
+
+```bash
+gh auth login        # GitHub.com → HTTPS → 브라우저 또는 토큰(권한: repo)
+```
+
+`gh`가 없다면 git 자격증명만 설정돼 있어도 됩니다. 다음이 되면 통과입니다.
+
+```bash
+git ls-remote https://github.com/TAEHYUN9999/vivado-strategy-sweep.git   # 에러 없이 목록이 나오면 OK
+```
+
+**2) Claude Code를 열고, 이 저장소를 플러그인 마켓플레이스로 추가**
+
+Claude Code 세션 안에서(프롬프트에) 아래를 입력합니다.
+
+```
+/plugin marketplace add TAEHYUN9999/vivado-strategy-sweep
+```
+
+**3) 플러그인 설치**
+
+```
+/plugin install vivado-strategy-sweep@vivado-strategy-sweep
+```
+
+(또는 인자 없이 `/plugin` 만 입력하면 메뉴가 떠서 목록에서 설치할 수도 있습니다.)
+
+**4) 사용**
+
+```
+/vivado-build --xpr /회사/실제/프로젝트.xpr --dry-run     # 먼저 검증 (~1분)
+/vivado-build --xpr /회사/실제/프로젝트.xpr                # 풀 sweep
+```
+
+회사 PC의 Vivado 경로가 다르거나 PATH에 없으면 `--vivado` 로 직접 지정합니다.
+
+```
+/vivado-build --xpr /회사/프로젝트.xpr --vivado /tools/Xilinx/Vivado/2023.1/bin/vivado
+```
+
+> 경로는 모두 인자로 받기 때문에(`--xpr`, `--vivado`, `--outdir`) 회사 PC의
+> 디렉터리 구조가 달라도 그대로 사용할 수 있습니다. 스크립트 자체 경로는
+> `${CLAUDE_PLUGIN_ROOT}` 로 자동 해석되므로 어디에 설치되든 동작합니다.
+
+#### 업데이트 / 제거
+
+```
+/plugin marketplace update vivado-strategy-sweep     # 최신 커밋 받기
+/plugin uninstall vivado-strategy-sweep@vivado-strategy-sweep
+```
+
+#### Claude 없이 셸로만 쓰기 (대안)
+
+플러그인 설치 없이도 동일하게 동작합니다.
+
+```bash
+git clone https://github.com/TAEHYUN9999/vivado-strategy-sweep.git
+cd vivado-strategy-sweep
+./scripts/run.sh --xpr /회사/프로젝트.xpr --dry-run
+```
+
+플러그인 매니페스트는 [`.claude-plugin/plugin.json`](.claude-plugin/plugin.json),
+마켓플레이스 정의는 [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json),
+커맨드는 [`commands/vivado-build.md`](commands/vivado-build.md) 에 있습니다.
 
 ---
 
