@@ -1,0 +1,11 @@
+# Sweep outputs
+vivado_sweep_*/
+*.bit
+*.xsa
+*.ltx
+
+# Vivado batch noise
+*.log
+*.jou
+.Xil/
+vivado*.backup.*

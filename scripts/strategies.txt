@@ -1,0 +1,16 @@
+# Implementation strategies to sweep (one per line; # and blank lines ignored).
+# Validated against `list_property_value strategy [get_runs impl_1]` at runtime.
+# Trim or extend freely. A full sweep takes (synthesis once) + (impl time x N).
+
+Performance_Explore
+Performance_ExplorePostRoutePhysOpt
+Performance_ExtraTimingOpt
+Performance_NetDelay_high
+Performance_Retiming
+
+# Useful when the design is routing-congested:
+# Congestion_SpreadLogic_high
+
+# Fast baselines / sanity:
+# Flow_RuntimeOptimized
+# Vivado Implementation Defaults

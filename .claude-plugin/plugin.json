@@ -1,0 +1,11 @@
+{
+  "name": "vivado-strategy-sweep",
+  "version": "0.1.0",
+  "description": "One-command Vivado implementation-strategy sweep: synth once, implement under N strategies, compare WNS/TNS/utilization, archive bitstreams + reports, and emit a .xsa for the best run.",
+  "author": {
+    "name": "kth181399",
+    "email": "kth181399@gmail.com"
+  },
+  "keywords": ["vivado", "fpga", "xilinx", "timing", "implementation", "bitstream", "xsa"],
+  "commands": ["./commands/vivado-build.md"]
+}
