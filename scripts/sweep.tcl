@@ -138,8 +138,8 @@ foreach s $strategies {
         puts ">>> \[$s\] launch error: $err"
     }
 
-    set prog   [get_property PROGRESS $run]
-    set status [get_property STATUS   $run]
+    set prog   [get_property PROGRESS [get_runs $run]]
+    set status [get_property STATUS   [get_runs $run]]
     set rundir [get_property DIRECTORY [get_runs $run]]
     set ok [expr {$prog eq "100%"}]
 
