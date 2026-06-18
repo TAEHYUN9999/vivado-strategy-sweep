@@ -91,7 +91,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Exit early if sourced with --source-only (for testing)
-[[ "${__VB_SOURCE_ONLY:-0}" == "1" ]] && return 0 2>/dev/null || true
+[[ "${__VB_SOURCE_ONLY:-0}" == "1" ]] && { return 0 2>/dev/null; exit 0; }
 
 [[ -n "$XPR" ]] || die "no project given (--xpr PATH or \$VB_XPR)"
 [[ -f "$XPR" ]] || die "xpr not found: $XPR"
