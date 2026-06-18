@@ -235,16 +235,17 @@ if [[ "$DRYRUN" != "1" && "$TS_ENABLED" == "1" && -f "$SUMMARY" ]]; then
             # fall back to the live project run dir if the dcp was not archived
             if [[ -z "$dcp" ]]; then
                 src_run="$(awk -F, -v st="$s" '$1==st{print $13}' "$SUMMARY")"
-                dcp="$(find "$src_run" -maxdepth 1 -name '*_routed.dcp' 2>/dev/null | head -1)"
+                [[ -n "$src_run" ]] && dcp="$(find "$src_run" -maxdepth 1 -name '*_routed.dcp' 2>/dev/null | head -1)"
             fi
             if [[ -z "$dcp" ]]; then
                 echo ">>> [$s] no routed DCP found, skipping" >&2; continue
             fi
             tsout="$rundir/troubleshoot"
+            mkdir -p "$tsout"
             echo ">>> [$s] extracting violations (logic_pct>=$TS_LOGIC_PCT, max_paths=$TS_MAX_PATHS) ..."
             "$VIVADO_BIN" -mode batch -notrace -source "$TSCRIPT" \
                 -tclargs "$dcp" "$tsout" "$s" "$TS_MAX_PATHS" "$TS_LOGIC_PCT" \
-                > "$tsout.log" 2>&1 || echo ">>> [$s] troubleshoot.tcl error (see $tsout.log)" >&2
+                > "$tsout/vivado.log" 2>&1 || echo ">>> [$s] troubleshoot.tcl error (see $tsout/vivado.log)" >&2
             [[ -f "$tsout/violations.json" ]] && echo ">>> [$s] -> $tsout/violations.json"
         done <<< "$violators"
         echo "======================================================"
