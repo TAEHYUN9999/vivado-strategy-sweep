@@ -173,6 +173,8 @@ foreach s $strategies {
     file mkdir $strat_out
     set bit "$rundir/${top}.bit"
     if {[file exists $bit]}  { file copy -force $bit  "$strat_out/${s}.bit" }
+    set ltx "$rundir/${top}.ltx"
+    if {[file exists $ltx]} { file copy -force $ltx "$strat_out/${s}.ltx" }
     if {[file exists $util]} { file copy -force $util "$strat_out/${s}_utilization.rpt" }
     set tsum "$rundir/${top}_timing_summary_routed.rpt"
     if {[file exists $tsum]} { file copy -force $tsum "$strat_out/${s}_timing_summary.rpt" }
