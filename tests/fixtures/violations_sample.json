@@ -1,0 +1,27 @@
+{
+  "strategy": "Performance_Bad",
+  "wns": -0.231, "whs": 0.009,
+  "paths": [
+    {
+      "id": 1, "kind": "setup", "slack_ns": -0.231,
+      "startpoint": "design_1_i/rgbd/filt/acc_reg[3]/C",
+      "endpoint": "design_1_i/rgbd/filt/out_reg[11]/D",
+      "data_path_delay_ns": 5.21, "logic_pct": 62, "route_pct": 38,
+      "classification": "logic",
+      "cells": [
+        {"name": "design_1_i/rgbd/filt/mult", "ref": "filter_gain",
+         "file": "/home/th/.../filter_gain.v", "line": 123}
+      ]
+    },
+    {
+      "id": 2, "kind": "setup", "slack_ns": -0.110,
+      "startpoint": "design_1_i/rgbd/a_reg[0]/C",
+      "endpoint": "design_1_i/rgbd/b_reg[0]/D",
+      "data_path_delay_ns": 4.80, "logic_pct": 31, "route_pct": 69,
+      "classification": "net",
+      "cells": [
+        {"name": "design_1_i/rgbd/buf", "ref": "rgbd_top", "file": null, "line": null}
+      ]
+    }
+  ]
+}

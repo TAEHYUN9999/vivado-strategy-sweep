@@ -36,3 +36,35 @@ User arguments (may be empty): $ARGUMENTS
 - Strategies are validated inside Vivado against this exact part; an unknown name aborts with the valid list.
 - `--xsa best` (default) writes a single hardware handoff (bitstream included) for the winning run.
 - Do not invent timing numbers — only report values read from `summary.csv` / the `.rpt` files.
+
+## Timing troubleshoot (post-sweep)
+
+After analyzing `summary.csv`, check each `<outdir>/<strategy>/troubleshoot/violations.json`
+(present only when that strategy had WNS<0 or WHS<0). For each file, generate
+review-ready artifacts next to it — never modify original sources or sweep outputs.
+
+For every path in `violations.json`:
+
+- **classification == "net"** → append a candidate constraint to
+  `<strategy>/troubleshoot/xdc/timing_fix.xdc`. Choose among `set_multicycle_path`,
+  `set_false_path`, or `set_max_delay` ONLY if justifiable, and prefix each with a
+  `# CAUTION:` line stating the exact condition under which it is legitimate
+  (e.g. "valid only if start/end are truly N-cycle related"). Never emit an
+  unjustified relaxation — if none is defensible, write a `# NOTE:` explaining the
+  path is route-dominated and suggest floorplan/pblock investigation instead.
+
+- **classification == "logic"** → if a cell has a real `file`/`line`, read that
+  `.v`, copy it verbatim to `hdl/<basename>.v.bak`, and write a pipelined revision
+  to `hdl/<basename>.v` (add a register stage on the critical combinational path).
+  If `file` is null (mapping uncertain), do NOT fabricate a revision — give
+  module-level guidance in the report only.
+
+Then write `<strategy>/troubleshoot/report.md`:
+- a table: path id | kind | slack | logic%/route% | class | module:line
+- per net path: the proposed constraint + why it is/ isn't legitimate
+- per logic path: the offending code block quoted + the pipeline diff
+  (orig→revised) + a caution that latency changed and FSM/handshake/data-align
+  must be re-verified, plus "functional equivalence NOT guaranteed — simulate"
+- an apply-order guide (which file to swap, then recompile)
+
+Report which strategies got artifacts and where. Do not apply or rebuild.
