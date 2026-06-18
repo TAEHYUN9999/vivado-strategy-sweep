@@ -191,6 +191,15 @@ write_hw_platform -fixed -include_bit -force impl_<best>.xsa
 - 홀드(`WHS`/`THS`)를 셋업과 함께 보고하므로, 셋업은 잡았지만 홀드를 깨뜨리는
   strategy를 바로 확인할 수 있습니다.
 
+## Timing troubleshoot
+
+If any swept strategy fails timing (WNS<0 or WHS<0), the sweep extracts the
+worst paths to `<strategy>/troubleshoot/violations.json` (net- vs logic-bound,
+with cell→RTL source mapping). The `vivado-build` command then writes
+review-ready fixes: `xdc/timing_fix.xdc` (net), `hdl/<module>.v.bak` + revision
+(logic), and `report.md`. Nothing is applied or rebuilt automatically — review,
+copy, recompile. Opt out with `--no-troubleshoot`.
+
 ## 라이선스
 
 MIT — [LICENSE](LICENSE) 참고.

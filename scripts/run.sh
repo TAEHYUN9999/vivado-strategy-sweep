@@ -21,6 +21,9 @@
 #   --vitis-src DIR         Build Vitis platform+empty-C app per strategy from
 #                           these C sources (-> <strategy>/vitis/, ready for JTAG)
 #   --vitis PATH            Path to xsct binary          (default: auto-detect)
+#   --no-troubleshoot       Skip post-sweep timing troubleshoot
+#   --ts-max-paths N        Worst paths to analyze per violating strategy (default 10)
+#   --ts-logic-pct P        logic% >= P classifies a path as logic-bound (default 50)
 #   --dry-run               Validate project + strategies, print plan, launch nothing
 #   --vivado PATH           Path to vivado binary        (default: auto-detect)
 #   -h | --help
