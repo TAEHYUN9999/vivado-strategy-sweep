@@ -55,7 +55,7 @@ if {[llength $argv] >= 5} {
         set kindstr [expr {$kind eq "max" ? "setup" : "hold"}]
         # cells along the path -> RTL source
         set celljson {}
-        foreach c [get_cells -quiet -of_objects [get_pins -quiet -of_objects $p]] {
+        foreach c [lsort -unique [get_cells -quiet -of_objects [get_pins -quiet -of_objects $p]]] {
             set fn [get_property -quiet FILE_NAME $c]
             set ln [get_property -quiet LINE_NUMBER $c]
             set rf [get_property -quiet REF_NAME $c]
@@ -66,7 +66,9 @@ if {[llength $argv] >= 5} {
         set cellblock [join $celljson ",\n"]
         lappend entries "    {\n      \"id\": $pid, \"kind\": \"$kindstr\", \"slack_ns\": $slack,\n      \"startpoint\": [ts_json_str $sp], \"endpoint\": [ts_json_str $ep],\n      \"data_path_delay_ns\": $total, \"logic_pct\": $lpct, \"route_pct\": $rpct,\n      \"classification\": \"$cls\",\n      \"cells\": \[\n$cellblock\n      \]\n    }"
     }
-    puts $fh [join $entries ",\n"]
+    if {[llength $entries] > 0} {
+        puts $fh [join $entries ",\n"]
+    }
     puts $fh "  \]"
     puts $fh "}"
     close $fh
