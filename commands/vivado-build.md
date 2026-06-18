@@ -61,7 +61,7 @@ For every path in `violations.json`:
 
 Then write `<strategy>/troubleshoot/report.md`:
 - a table: path id | kind | slack | logic%/route% | class | module:line
-- per net path: the proposed constraint + why it is/ isn't legitimate
+- per net path: the proposed constraint + why it is/isn't legitimate
 - per logic path: the offending code block quoted + the pipeline diff
   (orig→revised) + a caution that latency changed and FSM/handshake/data-align
   must be re-verified, plus "functional equivalence NOT guaranteed — simulate"
