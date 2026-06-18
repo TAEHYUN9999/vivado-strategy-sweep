@@ -21,8 +21,10 @@ if {[llength $argv] >= 5} {
     file mkdir $outdir
     open_checkpoint $dcp
 
-    set wns [get_property SLACK [lindex [get_timing_paths -delay_type max -max_paths 1 -nworst 1] 0]]
-    set whs [get_property SLACK [lindex [get_timing_paths -delay_type min -max_paths 1 -nworst 1] 0]]
+    set mp [get_timing_paths -delay_type max -max_paths 1 -nworst 1]
+    set hp [get_timing_paths -delay_type min -max_paths 1 -nworst 1]
+    set wns [expr {[llength $mp] > 0 ? [get_property SLACK [lindex $mp 0]] : "null"}]
+    set whs [expr {[llength $hp] > 0 ? [get_property SLACK [lindex $hp 0]] : "null"}]
 
     set paths {}
     foreach kind {max min} {
