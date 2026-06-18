@@ -29,6 +29,9 @@
 # =============================================================================
 set -euo pipefail
 
+# Allow tests to source this file for its functions without executing the sweep.
+if [[ "${1:-}" == "--source-only" ]]; then __VB_SOURCE_ONLY=1; fi
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TCL="$SCRIPT_DIR/sweep.tcl"
 STRAT_FILE="$SCRIPT_DIR/strategies.txt"
@@ -44,8 +47,26 @@ DRYRUN="0"
 VITIS_SRC=""
 VITIS_BIN="${VITIS_BIN:-}"
 VIVADO_BIN="${VIVADO_BIN:-}"
+TS_ENABLED="1"
+TS_MAX_PATHS="10"
+TS_LOGIC_PCT="50"
 
 die() { echo "ERROR: $*" >&2; exit 1; }
+
+# detect_violations <summary.csv>: print each strategy with WNS<0 or WHS<0.
+# Returns 0 if any printed, 1 otherwise.
+detect_violations() {
+    local csv="$1" found=1
+    [[ -f "$csv" ]] || return 1
+    # cols: 1=strategy 2=status 4=WNS_ns 6=WHS_ns
+    while IFS=, read -r strat status _met wns _tns whs _rest; do
+        [[ "$strat" == "strategy" ]] && continue
+        [[ "$status" == "complete" ]] || continue
+        awk -v w="$wns" -v h="$whs" 'BEGIN{exit !(w+0<0 || h+0<0)}' || continue
+        echo "$strat"; found=0
+    done < "$csv"
+    return $found
+}
 
 # ---- arg parsing ----------------------------------------------------------
 while [[ $# -gt 0 ]]; do
@@ -58,12 +79,19 @@ while [[ $# -gt 0 ]]; do
         --xsa)            XSA_MODE="$2"; shift 2;;
         --vitis-src)      VITIS_SRC="$2"; shift 2;;
         --vitis)          VITIS_BIN="$2"; shift 2;;
+        --no-troubleshoot) TS_ENABLED="0"; shift;;
+        --ts-max-paths)    TS_MAX_PATHS="$2"; shift 2;;
+        --ts-logic-pct)    TS_LOGIC_PCT="$2"; shift 2;;
         --dry-run)        DRYRUN="1"; shift;;
+        --source-only)     shift;;  # consumed by guard at top
         --vivado)         VIVADO_BIN="$2"; shift 2;;
         -h|--help)        sed -n '2,40p' "$0"; exit 0;;
         *) die "unknown option: $1 (use --help)";;
     esac
 done
+
+# Exit early if sourced with --source-only (for testing)
+[[ "${__VB_SOURCE_ONLY:-0}" == "1" ]] && return 0 2>/dev/null || true
 
 [[ -n "$XPR" ]] || die "no project given (--xpr PATH or \$VB_XPR)"
 [[ -f "$XPR" ]] || die "xpr not found: $XPR"

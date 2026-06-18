@@ -1,0 +1,3 @@
+strategy,status,timing_met,WNS_ns,TNS_ns,WHS_ns,THS_ns,TPWS_ns,LUT,FF,BRAM,DSP,run_dir
+Performance_Good,complete,PASS,0.120000,0.000000,0.010000,0.000000,-1.667000,33151,31696,139,29,/x
+Performance_Bad,complete,FAIL,-0.231000,-4.120000,0.009000,0.000000,-1.667000,33175,31696,139,29,/x
