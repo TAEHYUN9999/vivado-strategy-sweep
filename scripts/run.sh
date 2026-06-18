@@ -18,6 +18,9 @@
 #   --outdir DIR            Output dir                   (default: ./vivado_sweep_<timestamp>)
 #   --synth-strategy NAME   Override synth_1 strategy    (default: leave project as-is)
 #   --xsa MODE              best | all | none            (default: all)
+#   --vitis-src DIR         Build Vitis platform+empty-C app per strategy from
+#                           these C sources (-> <strategy>/vitis/, ready for JTAG)
+#   --vitis PATH            Path to xsct binary          (default: auto-detect)
 #   --dry-run               Validate project + strategies, print plan, launch nothing
 #   --vivado PATH           Path to vivado binary        (default: auto-detect)
 #   -h | --help
@@ -38,6 +41,8 @@ OUTDIR=""
 SYNTH_STRATEGY=""
 XSA_MODE="all"
 DRYRUN="0"
+VITIS_SRC=""
+VITIS_BIN="${VITIS_BIN:-}"
 VIVADO_BIN="${VIVADO_BIN:-}"
 
 die() { echo "ERROR: $*" >&2; exit 1; }
@@ -51,6 +56,8 @@ while [[ $# -gt 0 ]]; do
         --outdir)         OUTDIR="$2"; shift 2;;
         --synth-strategy) SYNTH_STRATEGY="$2"; shift 2;;
         --xsa)            XSA_MODE="$2"; shift 2;;
+        --vitis-src)      VITIS_SRC="$2"; shift 2;;
+        --vitis)          VITIS_BIN="$2"; shift 2;;
         --dry-run)        DRYRUN="1"; shift;;
         --vivado)         VIVADO_BIN="$2"; shift 2;;
         -h|--help)        sed -n '2,40p' "$0"; exit 0;;
@@ -143,6 +150,48 @@ if [[ "$DRYRUN" != "1" && -f "$SUMMARY" ]]; then
     fi
     echo "======================================================"
     echo "Artifacts (.bit / .xsa / *.rpt) in: $OUTDIR"
+fi
+
+# ---- Vitis: platform + empty-C app build per strategy ---------------------
+# Enabled by --vitis-src DIR. For each strategy folder that has a .xsa, build
+# <strategy>/vitis/{vitispp platform, vitisap app}.  Open <strategy>/vitis in
+# Vitis to program over JTAG.
+if [[ "$DRYRUN" != "1" && -n "$VITIS_SRC" ]]; then
+    if [[ -z "$VITIS_BIN" ]]; then
+        for x in "$(command -v xsct 2>/dev/null)" \
+                 /tools/Xilinx/Vitis/2023.1/bin/xsct \
+                 /opt/Xilinx/Vitis/2023.1/bin/xsct \
+                 /home/th/tools/xilinx/Vitis/2023.1/bin/xsct; do
+            [[ -n "$x" && -x "$x" ]] && { VITIS_BIN="$x"; break; }
+        done
+    fi
+    VBUILD="$SCRIPT_DIR/build_vitis.tcl"
+    if [[ -z "$VITIS_BIN" || ! -x "$VITIS_BIN" ]]; then
+        echo "WARNING: xsct not found, skipping Vitis build (use --vitis PATH)" >&2
+    elif [[ ! -d "$VITIS_SRC" ]]; then
+        echo "WARNING: --vitis-src '$VITIS_SRC' is not a directory, skipping Vitis" >&2
+    elif [[ ! -f "$VBUILD" ]]; then
+        echo "WARNING: build_vitis.tcl not found at $VBUILD, skipping Vitis" >&2
+    else
+        echo ""
+        echo "================= VITIS BUILD (src=$VITIS_SRC) ================="
+        for d in "$OUTDIR"/*/; do
+            s="$(basename "$d")"
+            xsa="$d$s.xsa"
+            [[ -f "$xsa" ]] || continue
+            echo ">>> [$s] Vitis platform + app build ..."
+            rm -rf "${d}vitis"
+            ( cd "$d" && "$VITIS_BIN" "$VBUILD" "./$s.xsa" "./vitis" "$VITIS_SRC" ) \
+                > "${d}vitis_build.log" 2>&1
+            if [[ -f "${d}vitis/vitisap/Debug/vitisap.elf" ]]; then
+                echo ">>> [$s] OK -> ${d}vitis/vitisap/Debug/vitisap.elf"
+            else
+                echo ">>> [$s] FAILED (see ${d}vitis_build.log)" >&2
+            fi
+        done
+        echo "==============================================================="
+        echo "Open <strategy>/vitis in Vitis to program over JTAG."
+    fi
 fi
 
 echo "DONE."
