@@ -17,6 +17,8 @@
 #   --jobs N                -jobs for launch_runs        (default: min(8, nproc))
 #   --outdir DIR            Output dir                   (default: ./vivado_sweep_<timestamp>)
 #   --synth-strategy NAME   Override synth_1 strategy    (default: leave project as-is)
+#   --force-synth           reset_run synth_1 first so synthesis re-runs even if
+#                           it is already 100% (use after changing RTL)
 #   --xsa MODE              best | all | none            (default: all)
 #   --vitis-src DIR|auto    Build Vitis platform+app for each TIMING-PASS strategy
 #                           ('auto' finds firmware under the project dir -> JTAG)
@@ -45,6 +47,7 @@ STRATEGIES=""
 JOBS=""
 OUTDIR=""
 SYNTH_STRATEGY=""
+FORCE_SYNTH="0"
 XSA_MODE="all"
 DRYRUN="0"
 VITIS_SRC=""
@@ -79,6 +82,7 @@ while [[ $# -gt 0 ]]; do
         --jobs)           JOBS="$2"; shift 2;;
         --outdir)         OUTDIR="$2"; shift 2;;
         --synth-strategy) SYNTH_STRATEGY="$2"; shift 2;;
+        --force-synth)    FORCE_SYNTH="1"; shift;;
         --xsa)            XSA_MODE="$2"; shift 2;;
         --vitis-src)      VITIS_SRC="$2"; shift 2;;
         --vitis)          VITIS_BIN="$2"; shift 2;;
@@ -167,6 +171,7 @@ export VB_STRATEGIES="$STRATEGIES"
 export VB_JOBS="$JOBS"
 export VB_OUTDIR="$OUTDIR"
 export VB_SYNTH_STRATEGY="$SYNTH_STRATEGY"
+export VB_FORCE_SYNTH="$FORCE_SYNTH"
 export VB_XSA="$XSA_MODE"
 export VB_DRYRUN="$DRYRUN"
 
@@ -174,7 +179,7 @@ echo "=================================================================="
 echo " vivado : $VIVADO_BIN"
 echo " xpr    : $XPR"
 echo " strat  : $STRATEGIES"
-echo " jobs   : $JOBS    xsa: $XSA_MODE    dry-run: $DRYRUN"
+echo " jobs   : $JOBS    xsa: $XSA_MODE    dry-run: $DRYRUN    force-synth: $FORCE_SYNTH"
 echo " outdir : $OUTDIR"
 echo "=================================================================="
 

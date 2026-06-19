@@ -7,6 +7,7 @@
 #   VB_JOBS            -jobs value for launch_runs
 #   VB_OUTDIR          output directory (already created)
 #   VB_SYNTH_STRATEGY  optional synth_1 strategy ("" = leave as-is)
+#   VB_FORCE_SYNTH     "1" = reset_run synth_1 and re-synthesize even if 100%
 #   VB_XSA             "best" | "all" | "none"
 #   VB_DRYRUN          "1" = validate & print plan only, do not launch
 #
@@ -24,6 +25,7 @@ set strategies  [split [env_or VB_STRATEGIES ""] ","]
 set jobs        [env_or VB_JOBS 8]
 set outdir      [env_or VB_OUTDIR "./vivado_sweep"]
 set synth_strat [env_or VB_SYNTH_STRATEGY ""]
+set force_synth [env_or VB_FORCE_SYNTH "0"]
 set xsa_mode    [env_or VB_XSA "best"]
 set dryrun      [env_or VB_DRYRUN "0"]
 
@@ -100,8 +102,9 @@ if {$dryrun eq "1"} {
 if {$synth_strat ne ""} {
     set_property strategy $synth_strat [get_runs synth_1]
 }
-if {[get_property PROGRESS [get_runs synth_1]] ne "100%" || $synth_strat ne ""} {
-    puts "\n>>> Running synthesis (synth_1)..."
+if {$force_synth eq "1" || [get_property PROGRESS [get_runs synth_1]] ne "100%" || $synth_strat ne ""} {
+    if {$force_synth eq "1"} { puts "\n>>> Forcing re-synthesis (--force-synth)..." } \
+    else { puts "\n>>> Running synthesis (synth_1)..." }
     reset_run synth_1
     launch_runs synth_1 -jobs $jobs
     wait_on_run synth_1
