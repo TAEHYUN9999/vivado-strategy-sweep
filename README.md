@@ -74,7 +74,7 @@ vivado_sweep_<ts>/
 | `--outdir DIR` | `./vivado_sweep_<ts>` | 출력 디렉터리 (실행 위치 기준) |
 | `--synth-strategy NAME` | (변경 안 함) | `synth_1` strategy 덮어쓰기 |
 | `--xsa best\|all\|none` | `all` | 어떤 run에 `.xsa`를 만들지 |
-| `--vitis-src DIR` | (off) | `DIR` 의 C 소스로 strategy별 Vitis 플랫폼+앱 워크스페이스 빌드 (JTAG 굽기용) |
+| `--vitis-src DIR\|auto` | (off) | **timing-PASS** strategy의 `.xsa`로 Vitis 플랫폼+앱 워크스페이스 빌드 (JTAG 굽기용). `auto`=프로젝트 디렉터리에서 펌웨어 소스 자동탐지 |
 | `--vitis PATH` | 자동 탐지 | `xsct` 바이너리 경로 |
 | `--no-troubleshoot` | off | 타이밍 실패 분석 단계 건너뛰기 |
 | `--ts-max-paths N` | `10` | 위반 strategy당 분석할 worst path 수 |
@@ -212,17 +212,26 @@ write_hw_platform -fixed -include_bit -force impl_<best>.xsa
 
 ## Vitis 워크스페이스 / JTAG 굽기
 
-`--vitis-src DIR` 를 주면 strategy별로 `.xsa` 에서 **Vitis 워크스페이스**를 자동
-생성합니다 (`<outdir>/<strategy>/vitis/`):
+`--vitis-src` 를 주면 **타이밍을 통과한(timing-PASS)** strategy의 `.xsa` 에서
+**Vitis 워크스페이스**를 자동 생성합니다 (`<outdir>/<strategy>/vitis/`). 타이밍을
+못 맞춘 strategy는 스킵합니다(굽기용이므로).
 
 - `vitispp` — 플랫폼 (BSP 포함, MicroBlaze standalone)
-- `vitisap` — 빈 C 앱 + `DIR` 의 소스 import + 빌드된 `.elf`
+- `vitisap` — 빈 C 앱 + 소스 import + 빌드된 `.elf`
 - `vitisap_system` — 시스템 프로젝트
 
+소스 경로는 직접 주거나(`/경로/펌웨어`), **`auto`** 로 자동탐지합니다. `auto` 는
+`.xpr` 디렉터리 아래에서 `vitis_src_ver2` → `vitis/app/src` → `vitis_src` → `src`
+순으로 `main.c` 가 있는 폴더를 찾고(없으면 하위 검색), 못 찾으면 Vitis 빌드를
+건너뜁니다.
+
 ```bash
+# 소스 자동탐지 + timing-PASS면 자동 생성:
 ./scripts/run.sh --xpr /경로/프로젝트.xpr \
-    --strategies "Performance_NetDelay_low" \
-    --vitis-src /경로/펌웨어_C소스
+    --strategies "Performance_ExplorePostRoutePhysOpt" --vitis-src auto
+
+# 소스 경로를 직접 지정:
+./scripts/run.sh --xpr /경로/프로젝트.xpr --vitis-src /경로/펌웨어_C소스
 ```
 
 만들어진 워크스페이스는 **classic Vitis GUI에서 바로 열립니다**

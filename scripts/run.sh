@@ -18,8 +18,8 @@
 #   --outdir DIR            Output dir                   (default: ./vivado_sweep_<timestamp>)
 #   --synth-strategy NAME   Override synth_1 strategy    (default: leave project as-is)
 #   --xsa MODE              best | all | none            (default: all)
-#   --vitis-src DIR         Build Vitis platform+empty-C app per strategy from
-#                           these C sources (-> <strategy>/vitis/, ready for JTAG)
+#   --vitis-src DIR|auto    Build Vitis platform+app for each TIMING-PASS strategy
+#                           ('auto' finds firmware under the project dir -> JTAG)
 #   --vitis PATH            Path to xsct binary          (default: auto-detect)
 #   --no-troubleshoot       Skip post-sweep timing troubleshoot
 #   --ts-max-paths N        Worst paths to analyze per violating strategy (default 10)
@@ -99,6 +99,27 @@ done
 [[ -n "$XPR" ]] || die "no project given (--xpr PATH or \$VB_XPR)"
 [[ -f "$XPR" ]] || die "xpr not found: $XPR"
 XPR="$(readlink -f "$XPR")"
+
+# ---- vitis-src auto-discovery ---------------------------------------------
+# --vitis-src auto: locate the MicroBlaze firmware C sources under the project
+# directory, trying conventional layouts in order; first dir with main.c wins.
+# (vitis_src_ver2 is the standardized name; vitis/app/src is the in-project
+# Vitis export layout.) Found path is logged; if none, Vitis build is skipped.
+if [[ "$VITIS_SRC" == "auto" ]]; then
+    xpr_dir="$(dirname "$XPR")"
+    VITIS_SRC=""
+    for cand in vitis_src_ver2 vitis/app/src vitis_src src; do
+        if [[ -f "$xpr_dir/$cand/main.c" ]]; then VITIS_SRC="$xpr_dir/$cand"; break; fi
+    done
+    if [[ -z "$VITIS_SRC" ]]; then
+        VITIS_SRC="$(find "$xpr_dir" -maxdepth 4 -name main.c -printf '%h\n' 2>/dev/null | head -1)"
+    fi
+    if [[ -n "$VITIS_SRC" ]]; then
+        echo "vitis-src auto-discovered: $VITIS_SRC"
+    else
+        echo "WARNING: --vitis-src auto found no firmware (main.c) under $xpr_dir; Vitis build skipped" >&2
+    fi
+fi
 
 # ---- strategy list --------------------------------------------------------
 if [[ -z "$STRATEGIES" ]]; then
@@ -206,10 +227,17 @@ if [[ "$DRYRUN" != "1" && -n "$VITIS_SRC" ]]; then
     else
         echo ""
         echo "================= VITIS BUILD (src=$VITIS_SRC) ================="
+        [[ -f "$SUMMARY" ]] || echo "WARNING: $SUMMARY not found; no strategy can be confirmed timing-PASS, Vitis build will be skipped for all" >&2
         for d in "$OUTDIR"/*/; do
             s="$(basename "$d")"
             xsa="$d$s.xsa"
             [[ -f "$xsa" ]] || continue
+            # gate on timing: only build Vitis for strategies that met timing
+            met="$(awk -F, -v st="$s" '$1==st{print $3}' "$SUMMARY" 2>/dev/null)"
+            if [[ "$met" != "PASS" ]]; then
+                echo ">>> [$s] timing not met (${met:-unknown}) -> skipping Vitis build" >&2
+                continue
+            fi
             echo ">>> [$s] Vitis platform + app build ..."
             rm -rf "${d}vitis"
             ( cd "$d" && "$VITIS_BIN" "$VBUILD" "./$s.xsa" "./vitis" "$VITIS_SRC" ) \
