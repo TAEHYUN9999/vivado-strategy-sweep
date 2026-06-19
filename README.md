@@ -219,6 +219,9 @@ write_hw_platform -fixed -include_bit -force impl_<best>.xsa
 - `vitispp` — 플랫폼 (BSP 포함, MicroBlaze standalone)
 - `vitisap` — 빈 C 앱 + 소스 import + 빌드된 `.elf`
 - `vitisap_system` — 시스템 프로젝트
+- `download.bit` — 비트스트림 + `.elf` 를 합친 굽기용 파일 (`updatemem`, 펌웨어가
+  BRAM에 적재됨). Vitis GUI의 "Program Device → ELF 지정" 과 동일 결과이며,
+  프로세서 인스턴스는 `.mmi` 에서 자동 추출합니다.
 
 소스 경로는 직접 주거나(`/경로/펌웨어`), **`auto`** 로 자동탐지합니다. `auto` 는
 `.xpr` 디렉터리 아래에서 `vitis_src_ver2` → `vitis/app/src` → `vitis_src` → `src`

@@ -244,6 +244,26 @@ if [[ "$DRYRUN" != "1" && -n "$VITIS_SRC" ]]; then
                 > "${d}vitis_build.log" 2>&1
             if [[ -f "${d}vitis/vitisap/Debug/vitisap.elf" ]]; then
                 echo ">>> [$s] OK -> ${d}vitis/vitisap/Debug/vitisap.elf"
+                # merge bitstream + ELF -> download.bit (firmware loaded into BRAM),
+                # same artifact as Vitis "Program Device" with the ELF browsed in.
+                # mmi -> proc instance is auto-extracted (no hardcoding).
+                elf="${d}vitis/vitisap/Debug/vitisap.elf"
+                mmi="${d}vitis/vitispp/hw/$s.mmi"
+                [[ -f "$mmi" ]] || mmi="$(find "${d}vitis/vitispp/hw" -maxdepth 1 -name '*.mmi' 2>/dev/null | head -1)"
+                UPDATEMEM="$(dirname "$VIVADO_BIN")/updatemem"
+                proc=""
+                [[ -f "$mmi" ]] && proc="$(grep -oE 'InstPath="[^"]*"' "$mmi" | head -1 | sed -E 's/.*"([^"]*)".*/\1/')"
+                if [[ -x "$UPDATEMEM" && -f "$mmi" && -n "$proc" && -f "${d}$s.bit" ]]; then
+                    echo ">>> [$s] merging bit + elf -> download.bit (proc=$proc) ..."
+                    if "$UPDATEMEM" -force -meminfo "$mmi" -bit "${d}$s.bit" -data "$elf" \
+                            -proc "$proc" -out "${d}download.bit" > "${d}download_bit.log" 2>&1; then
+                        echo ">>> [$s] -> ${d}download.bit"
+                    else
+                        echo ">>> [$s] updatemem failed (see ${d}download_bit.log)" >&2
+                    fi
+                else
+                    echo ">>> [$s] skip download.bit (need updatemem + .mmi + proc + .bit)" >&2
+                fi
             else
                 echo ">>> [$s] FAILED (see ${d}vitis_build.log)" >&2
             fi
