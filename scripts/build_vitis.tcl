@@ -78,6 +78,18 @@ importsources -name $app -path $src
 puts ">>> building app $app ..."
 app build -name $app
 
+# ---- register the platform in the workspace tree (for the classic Vitis GUI) --
+# xsct's `platform create` builds the platform on disk but does NOT add it to the
+# Eclipse workspace .projects registry the way `app create` registers apps. A
+# workspace built purely by xsct therefore opens in the classic Vitis GUI with an
+# EMPTY Project Explorer: the apps reference a platform that is not in the project
+# tree, so nothing resolves. Importing the platform in-place registers it (creates
+# .metadata/.plugins/org.eclipse.core.resources/.projects/$plat), after which the
+# GUI lists platform + apps. The apps are already registered by `app create`, so
+# only the platform needs importing.
+puts ">>> registering platform $plat in workspace for GUI ..."
+importprojects $ws/$plat
+
 puts ">>> DONE: workspace=$ws"
 puts ">>>   platform: $ws/$plat"
 puts ">>>   app elf : $ws/$app/Debug/$app.elf"
