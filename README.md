@@ -73,7 +73,7 @@ vivado_sweep_<ts>/
 | `--jobs N` | `min(8, nproc)` | `launch_runs` 의 `-jobs` 값 (한 impl run 내부 코어 수) |
 | `--outdir DIR` | `./vivado_sweep_<ts>` | 출력 디렉터리 (실행 위치 기준) |
 | `--synth-strategy NAME` | (변경 안 함) | `synth_1` strategy 덮어쓰기 |
-| `--force-synth` | off | `synth_1` 이 이미 100%여도 `reset_run` 후 재합성 (RTL 변경 후 사용) |
+| `--reuse-synth` | off | `synth_1` 이 100%면 재사용 (기본은 매 sweep마다 `reset_run` 후 **재합성**) |
 | `--xsa best\|all\|none` | `all` | 어떤 run에 `.xsa`를 만들지 |
 | `--vitis-src DIR\|auto` | (off) | **timing-PASS** strategy의 `.xsa`로 Vitis 플랫폼+앱 워크스페이스 빌드 (JTAG 굽기용). `auto`=프로젝트 디렉터리에서 펌웨어 소스 자동탐지 |
 | `--vitis PATH` | 자동 탐지 | `xsct` 바이너리 경로 |
