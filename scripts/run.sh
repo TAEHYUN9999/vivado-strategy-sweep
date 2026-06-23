@@ -21,7 +21,9 @@
 #                           from scratch, i.e. reset_run synth_1 every sweep)
 #   --xsa MODE              best | all | none            (default: all)
 #   --vitis-src DIR|auto    Build Vitis platform+app for each TIMING-PASS strategy
-#                           ('auto' finds firmware under the project dir -> JTAG)
+#                           (default: auto -> finds firmware under project dir; JTAG)
+#   --no-vitis              Disable the Vitis build (only .bit/.ltx/.xsa)
+#   --no-prep-ip            Skip IP prep (Refresh IP Catalog + Generate Output Products)
 #   --vitis PATH            Path to xsct binary          (default: auto-detect)
 #   --no-troubleshoot       Skip post-sweep timing troubleshoot
 #   --ts-max-paths N        Worst paths to analyze per violating strategy (default 10)
@@ -50,7 +52,8 @@ SYNTH_STRATEGY=""
 REUSE_SYNTH="0"
 XSA_MODE="all"
 DRYRUN="0"
-VITIS_SRC=""
+PREP_IP="1"
+VITIS_SRC="auto"
 VITIS_BIN="${VITIS_BIN:-}"
 VIVADO_BIN="${VIVADO_BIN:-}"
 TS_ENABLED="1"
@@ -86,13 +89,15 @@ while [[ $# -gt 0 ]]; do
         --xsa)            XSA_MODE="$2"; shift 2;;
         --vitis-src)      VITIS_SRC="$2"; shift 2;;
         --vitis)          VITIS_BIN="$2"; shift 2;;
+        --no-vitis)        VITIS_SRC=""; shift;;
+        --no-prep-ip)      PREP_IP="0"; shift;;
         --no-troubleshoot) TS_ENABLED="0"; shift;;
         --ts-max-paths)    TS_MAX_PATHS="$2"; shift 2;;
         --ts-logic-pct)    TS_LOGIC_PCT="$2"; shift 2;;
         --dry-run)        DRYRUN="1"; shift;;
         --source-only)     shift;;  # consumed by guard at top
         --vivado)         VIVADO_BIN="$2"; shift 2;;
-        -h|--help)        sed -n '2,40p' "$0"; exit 0;;
+        -h|--help)        sed -n '2,44p' "$0"; exit 0;;
         *) die "unknown option: $1 (use --help)";;
     esac
 done
@@ -174,12 +179,14 @@ export VB_SYNTH_STRATEGY="$SYNTH_STRATEGY"
 export VB_REUSE_SYNTH="$REUSE_SYNTH"
 export VB_XSA="$XSA_MODE"
 export VB_DRYRUN="$DRYRUN"
+export VB_PREP_IP="$PREP_IP"
 
 echo "=================================================================="
 echo " vivado : $VIVADO_BIN"
 echo " xpr    : $XPR"
 echo " strat  : $STRATEGIES"
 echo " jobs   : $JOBS    xsa: $XSA_MODE    dry-run: $DRYRUN    reuse-synth: $REUSE_SYNTH"
+echo " prep   : ip=$([[ "$PREP_IP" == "1" ]] && echo on || echo off)    vitis=${VITIS_SRC:-off}"
 echo " outdir : $OUTDIR"
 echo "=================================================================="
 

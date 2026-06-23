@@ -9,6 +9,7 @@ Performance_NetDelay_high
 Performance_NetDelay_low
 Performance_Retiming
 Performance_ExtraTimingOpt
+Vivado Implementation Defaults
 
 # Useful when the design is routing-congested:
 # Congestion_SpreadLogic_high
