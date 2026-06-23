@@ -93,7 +93,8 @@ if {$dryrun eq "1"} {
     puts "\n---- DRY RUN: planned runs (nothing launched) ----"
     foreach s $strategies {
         set s [string trim $s]
-        puts "  impl_$s   <- synth_1   strategy=$s"
+        set tok [vb_safe_token $s]
+        puts "  impl_$tok   <- synth_1   strategy=$s"
     }
     puts "  synth strategy override: [expr {$synth_strat eq "" ? {(none)} : $synth_strat}]"
     puts "  IP prep: [expr {$prep_ip eq "1" ? {ON (update_ip_catalog -rebuild + upgrade_ip + generate_target)} : {OFF (--no-prep-ip)}}]"
