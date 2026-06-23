@@ -1,6 +1,6 @@
 ---
 description: Sweep Vivado implementation strategies, then analyze WNS/TNS/utilization and report the best.
-argument-hint: [--xpr PATH] [--strategies a,b,c] [--jobs N] [--xsa best|all|none] [--dry-run]
+argument-hint: [project-dir-or-.xpr] [--no-vitis] [--no-prep-ip] [--dry-run]
 allowed-tools: Bash, Read
 ---
 
@@ -12,29 +12,55 @@ User arguments (may be empty): $ARGUMENTS
 ## What to do
 
 1. Resolve the script path: `${CLAUDE_PLUGIN_ROOT}/scripts/run.sh`.
-2. Determine the `.xpr`:
-   - If `--xpr` is in `$ARGUMENTS`, use it.
-   - Otherwise ask the user for the project path (or check the current directory for a single `*.xpr`).
-3. Run the sweep. Stream output so the user sees progress. Example:
+
+2. **Resolve the project `.xpr`** from `$ARGUMENTS` (a directory or a `.xpr`):
+   - If it is a `.xpr` file, use it directly.
+   - If it is a directory, find the real project `.xpr`, excluding IP-internal
+     ones:
+     ```bash
+     find "<DIR>" -name '*.xpr' \
+       -not -path '*/.ipdefs/*' -not -path '*/.gen/*' \
+       -not -path '*/.srcs/*'   -not -path '*/.ip_user_files/*' \
+       -not -path '*/.runs/*'
+     ```
+     One match → use it (tell the user which). Several → ask the user to pick.
+     None → ask the user for the path.
+   - If `$ARGUMENTS` has no path, ask the user (or use a single `*.xpr` in CWD).
+
+3. **Immediately show the strategy checklist.** Read the active (uncommented,
+   non-blank) lines of `${CLAUDE_PLUGIN_ROOT}/scripts/strategies.txt`. Present
+   them as a SINGLE multi-select prompt. The checkbox widget caps at 4 options
+   per group, so split into groups of ≤4 shown together (for the default 8
+   entries: group 1/2 = the first four `Performance_*`, group 2/2 = the
+   remaining three `Performance_*` plus `Vivado Implementation Defaults`). The
+   user may check any across both groups; the **union** is the selection.
+   Checking everything = full sweep. Do not ask anything else first.
+
+4. **Run the flow** for the selected strategies. IP prep and Vitis are ON by
+   default — no extra flags needed:
    ```bash
-   bash "${CLAUDE_PLUGIN_ROOT}/scripts/run.sh" --xpr <PATH> $ARGUMENTS
+   bash "${CLAUDE_PLUGIN_ROOT}/scripts/run.sh" --xpr <XPR> --strategies "<comma-joined selection>"
    ```
-   - A full sweep is **long** (synthesis once + one implementation per strategy).
-     If the user has not confirmed they want a full multi-hour run, first do a
-     `--dry-run` to validate the project and strategy list, show the plan, and
-     confirm before launching the real sweep.
-   - For a real run, prefer launching it in the **background** and polling, so the
+   - A real run is **long** (synthesis once + one implementation per strategy,
+     each then built in Vitis). If the user has not confirmed a long run, first
+     do `--dry-run` to validate the project + strategy list and show the plan
+     (it prints `IP prep: ON` and the planned `impl_<token>` runs), then confirm.
+   - For the real run, prefer launching in the **background** and polling so the
      session stays responsive. Tell the user the output directory.
-4. When it finishes, read `<outdir>/summary.csv` and the per-strategy
+
+5. When it finishes, read `<outdir>/summary.csv` and the per-strategy
    `*_timing_summary.rpt` files. Produce a concise analysis:
    - A ranked table: strategy | timing_met | WNS | TNS | hold (WHS/THS) | LUT | FF | BRAM | DSP
    - State the **best strategy** (highest WNS among timing-met runs) and why.
    - Flag any run that failed to meet timing (negative WNS/WHS) or did not complete.
-   - Point to the archived `.bit`, `.xsa`, and report files in the output directory.
+   - Point to each strategy's `<outdir>/<token>/`: `.bit`, `.ltx`, `.xsa`, and —
+     for timing-PASS strategies — the Vitis `download.bit` (bitstream + firmware,
+     ready to program over JTAG).
 
 ## Notes
 - Strategies are validated inside Vivado against this exact part; an unknown name aborts with the valid list.
-- `--xsa best` (default) writes a single hardware handoff (bitstream included) for the winning run.
+- `--xsa all` (default) writes a hardware handoff (bitstream included) per completed strategy.
+- IP prep (Refresh IP Catalog + Generate Output Products) and the Vitis build run by default; use `--no-prep-ip` / `--no-vitis` to skip.
 - Do not invent timing numbers — only report values read from `summary.csv` / the `.rpt` files.
 
 ## Timing troubleshoot (post-sweep)
