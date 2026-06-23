@@ -15,6 +15,8 @@
 # so results are directly comparable. Summary written to $VB_OUTDIR/summary.csv
 # =============================================================================
 
+source [file join [file dirname [info script]] strat_util.tcl]
+
 proc env_or {name default} {
     if {[info exists ::env($name)] && $::env($name) ne ""} { return $::env($name) }
     return $default
@@ -28,6 +30,7 @@ set synth_strat [env_or VB_SYNTH_STRATEGY ""]
 set reuse_synth [env_or VB_REUSE_SYNTH "0"]
 set xsa_mode    [env_or VB_XSA "best"]
 set dryrun      [env_or VB_DRYRUN "0"]
+set prep_ip     [env_or VB_PREP_IP "1"]
 
 if {$xpr eq "" || ![file exists $xpr]} {
     error "VB_XPR not set or file missing: '$xpr'"
@@ -93,9 +96,41 @@ if {$dryrun eq "1"} {
         puts "  impl_$s   <- synth_1   strategy=$s"
     }
     puts "  synth strategy override: [expr {$synth_strat eq "" ? {(none)} : $synth_strat}]"
+    puts "  IP prep: [expr {$prep_ip eq "1" ? {ON (update_ip_catalog -rebuild + upgrade_ip + generate_target)} : {OFF (--no-prep-ip)}}]"
     puts "DRY RUN OK"
     close_project
     return
+}
+
+# ---- IP prep: Refresh IP Catalog + Generate Output Products ---------------
+# Mirrors the GUI "Refresh IP Catalog" then "Generate Output Products". Runs
+# once before synthesis. upgrade_ip no-ops up-to-date IPs; generate_target skips
+# products already current, so this is cheap when nothing changed.
+proc prep_ip_outputs {} {
+    puts "\n>>> IP prep: Refresh IP Catalog (update_ip_catalog -rebuild)"
+    update_ip_catalog -rebuild
+    set ips [get_ips -quiet]
+    if {[llength $ips] > 0} {
+        puts ">>> IP prep: upgrade_ip (up-to-date IPs no-op automatically)"
+        upgrade_ip $ips
+        puts ">>> IP prep: generate_target all \[get_ips\]"
+        generate_target all $ips
+    } else {
+        puts ">>> IP prep: no managed IPs found."
+    }
+    set bds [get_files -quiet *.bd]
+    if {[llength $bds] > 0} {
+        puts ">>> IP prep: generate_target all (block designs: $bds)"
+        generate_target all $bds
+    }
+    puts ">>> IP prep complete."
+}
+if {$prep_ip eq "1"} {
+    if {[catch {prep_ip_outputs} err]} {
+        error "IP prep FAILED (aborting before synthesis): $err"
+    }
+} else {
+    puts ">>> IP prep skipped (--no-prep-ip)."
 }
 
 # ---- synthesis once -------------------------------------------------------
@@ -124,7 +159,8 @@ set results {}   ;# list of {strategy run wns_numeric ok}
 
 foreach s $strategies {
     set s [string trim $s]
-    set run "impl_$s"
+    set tok [vb_safe_token $s]
+    set run "impl_$tok"
     puts "\n>>> \[$s\] preparing run $run"
 
     if {[llength [get_runs -quiet $run]] == 0} {
@@ -168,23 +204,23 @@ foreach s $strategies {
         set timing_met "INCOMPLETE"
     }
 
-    puts $csv "$s,[expr {$ok ? {complete} : {failed}}],$timing_met,$wns,$tns,$whs,$ths,$tpws,$lut,$ff,$bram,$dsp,$rundir"
+    puts $csv "$tok,[expr {$ok ? {complete} : {failed}}],$timing_met,$wns,$tns,$whs,$ths,$tpws,$lut,$ff,$bram,$dsp,$rundir"
     flush $csv
     puts ">>> \[$s\] done: progress=$prog WNS=$wns TNS=$tns timing=$timing_met LUT=$lut FF=$ff"
 
-    # archive key artifacts into a per-strategy subfolder ($outdir/<strategy>/)
-    set strat_out "$outdir/$s"
+    # archive key artifacts into a per-strategy subfolder ($outdir/<tok>/)
+    set strat_out "$outdir/$tok"
     file mkdir $strat_out
     set bit "$rundir/${top}.bit"
-    if {[file exists $bit]}  { file copy -force $bit  "$strat_out/${s}.bit" }
+    if {[file exists $bit]}  { file copy -force $bit  "$strat_out/${tok}.bit" }
     set ltx "$rundir/${top}.ltx"
-    if {[file exists $ltx]} { file copy -force $ltx "$strat_out/${s}.ltx" }
-    if {[file exists $util]} { file copy -force $util "$strat_out/${s}_utilization.rpt" }
+    if {[file exists $ltx]} { file copy -force $ltx "$strat_out/${tok}.ltx" }
+    if {[file exists $util]} { file copy -force $util "$strat_out/${tok}_utilization.rpt" }
     set tsum "$rundir/${top}_timing_summary_routed.rpt"
-    if {[file exists $tsum]} { file copy -force $tsum "$strat_out/${s}_timing_summary.rpt" }
+    if {[file exists $tsum]} { file copy -force $tsum "$strat_out/${tok}_timing_summary.rpt" }
 
     set wnsnum [expr {$wns eq "" ? -1e9 : $wns}]
-    lappend results [list $s $run $wnsnum $ok]
+    lappend results [list $tok $run $wnsnum $ok]
 }
 close $csv
 
