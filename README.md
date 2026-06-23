@@ -75,7 +75,9 @@ vivado_sweep_<ts>/
 | `--synth-strategy NAME` | (변경 안 함) | `synth_1` strategy 덮어쓰기 |
 | `--reuse-synth` | off | `synth_1` 이 100%면 재사용 (기본은 매 sweep마다 `reset_run` 후 **재합성**) |
 | `--xsa best\|all\|none` | `all` | 어떤 run에 `.xsa`를 만들지 |
-| `--vitis-src DIR\|auto` | (off) | **timing-PASS** strategy의 `.xsa`로 Vitis 플랫폼+앱 워크스페이스 빌드 (JTAG 굽기용). `auto`=프로젝트 디렉터리에서 펌웨어 소스 자동탐지 |
+| `--vitis-src DIR\|auto` | `auto` | **timing-PASS** strategy의 `.xsa`로 Vitis 플랫폼+앱 워크스페이스 빌드 (JTAG 굽기용). `auto`=프로젝트 디렉터리에서 펌웨어 소스 자동탐지 |
+| `--no-prep-ip` | | Skip IP prep (Refresh IP Catalog + Generate Output Products). Default: prep ON. |
+| `--no-vitis` | | Skip the Vitis platform/app/.elf/download.bit build. Default: Vitis ON (`auto`). |
 | `--vitis PATH` | 자동 탐지 | `xsct` 바이너리 경로 |
 | `--no-troubleshoot` | off | 타이밍 실패 분석 단계 건너뛰기 |
 | `--ts-max-paths N` | `10` | 위반 strategy당 분석할 worst path 수 |
@@ -100,6 +102,23 @@ vivado_sweep_<ts>/
 
 이 커맨드는 `run.sh`를 실행한 뒤 `summary.csv`와 타이밍 리포트를 읽어, 순위가
 매겨진 사람이 읽기 좋은 비교표와 함께 best strategy를 알려줍니다.
+
+### Interactive use (slash command)
+
+Run `/vivado-strategy-sweep:vivado-build <project-dir-or-.xpr>`. The command
+resolves the project `.xpr` (a directory is searched, excluding IP-internal
+`.xpr` under `.ipdefs/`, `.gen/`, `.srcs/`, `.ip_user_files/`, `.runs/`), then
+immediately shows a checkbox menu of the strategies in `scripts/strategies.txt`
+(including the `Vivado Implementation Defaults` baseline). Pick any subset; each
+selected strategy runs the full flow by default:
+
+**Refresh IP Catalog → upgrade_ip → Generate Output Products → Synthesis →
+Implementation → .bit/.ltx/.xsa → Vitis (platform + app + .elf + download.bit,
+for timing-PASS strategies).**
+
+Use `--no-prep-ip` or `--no-vitis` to drop either stage. Strategy names with
+spaces (e.g. the baseline) are stored under a sanitized token
+(`Vivado_Implementation_Defaults`) for run/folder/CSV/XSA names.
 
 ### 회사 PC에서 처음부터 설치하기 (step by step)
 
