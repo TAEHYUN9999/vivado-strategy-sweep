@@ -51,12 +51,23 @@ prompt or baseline strategy.
 1. **Resolve the project.** If the argument is a directory, find candidate
    `.xpr` files excluding IP-internal dirs. If exactly one → use it (state which).
    If several → ask the user. If it is already a `.xpr` → use directly.
-2. **Build the strategy menu** from `scripts/strategies.txt` (active, uncommented
-   lines), which now includes the `Vivado Implementation Defaults` baseline.
-3. **Ask the user** which strategies to run (multi-select; "all" allowed).
-4. **Run** `run.sh --xpr <resolved.xpr> --strategies "<comma-joined>"` with the
-   new defaults (IP prep ON, Vitis ON/auto). Surface the summary + per-strategy
-   output folders + whether Vitis built.
+2. **Immediately present the strategy checklist.** Right after path resolution
+   (no other questions first), pop a single checkbox prompt listing the active
+   `strategies.txt` entries (which now include `Vivado Implementation Defaults`).
+   Because the native checkbox widget caps at 4 options per group, the 8
+   strategies are shown as **two multi-select groups (4 + 4) in one prompt**, so
+   all are visible at once and the user checks across both. The **union** of both
+   groups is the selection. Checking everything = full sweep. Group split:
+   - **Group 1 (1/2):** `Performance_Explore`,
+     `Performance_ExplorePostRoutePhysOpt`, `Performance_ExploreWithRemap`,
+     `Performance_NetDelay_high`
+   - **Group 2 (2/2):** `Performance_NetDelay_low`, `Performance_Retiming`,
+     `Performance_ExtraTimingOpt`, `Vivado Implementation Defaults`
+   (If `strategies.txt` is later edited to a different count, re-chunk into
+   groups of ≤4 in declared order; the last group holds the remainder.)
+3. **Run** `run.sh --xpr <resolved.xpr> --strategies "<comma-joined union>"`
+   with the new defaults (IP prep ON, Vitis ON/auto). Surface the summary +
+   per-strategy output folders + whether Vitis built.
 
 Non-interactive use (`run.sh --xpr ... [--strategies ...]`) still works; omitting
 `--strategies` sweeps the full `strategies.txt`.
