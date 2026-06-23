@@ -76,8 +76,8 @@ vivado_sweep_<ts>/
 | `--reuse-synth` | off | `synth_1` 이 100%면 재사용 (기본은 매 sweep마다 `reset_run` 후 **재합성**) |
 | `--xsa best\|all\|none` | `all` | 어떤 run에 `.xsa`를 만들지 |
 | `--vitis-src DIR\|auto` | `auto` | **timing-PASS** strategy의 `.xsa`로 Vitis 플랫폼+앱 워크스페이스 빌드 (JTAG 굽기용). `auto`=프로젝트 디렉터리에서 펌웨어 소스 자동탐지 |
-| `--no-prep-ip` | | Skip IP prep (Refresh IP Catalog + Generate Output Products). Default: prep ON. |
-| `--no-vitis` | | Skip the Vitis platform/app/.elf/download.bit build. Default: Vitis ON (`auto`). |
+| `--no-prep-ip` | off | IP 준비 단계(Refresh IP Catalog + Generate Output Products) 건너뛰기. 기본은 prep 켜짐. |
+| `--no-vitis` | off | Vitis 플랫폼/앱/.elf/download.bit 빌드 건너뛰기. 기본은 Vitis 켜짐(`auto`). |
 | `--vitis PATH` | 자동 탐지 | `xsct` 바이너리 경로 |
 | `--no-troubleshoot` | off | 타이밍 실패 분석 단계 건너뛰기 |
 | `--ts-max-paths N` | `10` | 위반 strategy당 분석할 worst path 수 |
@@ -103,22 +103,21 @@ vivado_sweep_<ts>/
 이 커맨드는 `run.sh`를 실행한 뒤 `summary.csv`와 타이밍 리포트를 읽어, 순위가
 매겨진 사람이 읽기 좋은 비교표와 함께 best strategy를 알려줍니다.
 
-### Interactive use (slash command)
+### 대화형 사용 (슬래시 커맨드)
 
-Run `/vivado-strategy-sweep:vivado-build <project-dir-or-.xpr>`. The command
-resolves the project `.xpr` (a directory is searched, excluding IP-internal
-`.xpr` under `.ipdefs/`, `.gen/`, `.srcs/`, `.ip_user_files/`, `.runs/`), then
-immediately shows a checkbox menu of the strategies in `scripts/strategies.txt`
-(including the `Vivado Implementation Defaults` baseline). Pick any subset; each
-selected strategy runs the full flow by default:
+`/vivado-strategy-sweep:vivado-build <프로젝트-디렉터리-또는-.xpr>`를 실행합니다.
+커맨드는 프로젝트 `.xpr`을 찾되, `.ipdefs/`, `.gen/`, `.srcs/`, `.ip_user_files/`,
+`.runs/` 아래의 IP 내부 `.xpr`은 제외하고 탐색합니다. 그 뒤 `scripts/strategies.txt`의
+strategy 목록(`Vivado Implementation Defaults` 기준선 포함)을 체크박스 메뉴로 즉시
+보여줍니다. 원하는 항목을 선택하면 각 strategy가 기본 전체 흐름으로 실행됩니다.
 
 **Refresh IP Catalog → upgrade_ip → Generate Output Products → Synthesis →
 Implementation → .bit/.ltx/.xsa → Vitis (platform + app + .elf + download.bit,
 for timing-PASS strategies).**
 
-Use `--no-prep-ip` or `--no-vitis` to drop either stage. Strategy names with
-spaces (e.g. the baseline) are stored under a sanitized token
-(`Vivado_Implementation_Defaults`) for run/folder/CSV/XSA names.
+`--no-prep-ip` 또는 `--no-vitis`로 해당 단계를 건너뛸 수 있습니다. 공백을 포함한
+strategy 이름(예: 기준선)은 run/폴더/CSV/XSA 이름에 사용하기 위해 정규화된 토큰
+(`Vivado_Implementation_Defaults`)으로 저장됩니다.
 
 ### 회사 PC에서 처음부터 설치하기 (step by step)
 
