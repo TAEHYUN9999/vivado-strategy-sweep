@@ -139,7 +139,7 @@ if {$synth_strat ne ""} {
     set_property strategy $synth_strat [get_runs synth_1]
 }
 if {$reuse_synth ne "1" || [get_property PROGRESS [get_runs synth_1]] ne "100%" || $synth_strat ne ""} {
-    puts "\n>>> Running synthesis (synth_1) [reset_run + re-synthesize]..."
+    puts "\n>>> Running synthesis (synth_1) (reset_run + re-synthesize)..."
     reset_run synth_1
     launch_runs synth_1 -jobs $jobs
     wait_on_run synth_1
