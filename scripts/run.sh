@@ -15,7 +15,7 @@
 #   --strategies "a,b,c"    Comma list of impl strategies
 #                           (default: contents of strategies.txt, comments/blank ignored)
 #   --jobs N                -jobs for launch_runs        (default: min(8, nproc))
-#   --outdir DIR            Output dir                   (default: ./vivado_sweep_<timestamp>)
+#   --outdir DIR            Output dir                   (default: <project-dir>/vivado_sweep_<timestamp>)
 #   --synth-strategy NAME   Override synth_1 strategy    (default: leave project as-is)
 #   --reuse-synth           Reuse synth_1 if already 100% (default: re-synthesize
 #                           from scratch, i.e. reset_run synth_1 every sweep)
@@ -145,7 +145,10 @@ fi
 
 # ---- outdir ---------------------------------------------------------------
 if [[ -z "$OUTDIR" ]]; then
-    OUTDIR="$(pwd)/vivado_sweep_$(date +%Y%m%d_%H%M%S)"
+    # Default: create the sweep output folder INSIDE the project directory
+    # (the dir containing the .xpr), not the current working directory, so all
+    # results land next to the project the user pointed at.
+    OUTDIR="$(dirname "$XPR")/vivado_sweep_$(date +%Y%m%d_%H%M%S)"
 fi
 mkdir -p "$OUTDIR"
 OUTDIR="$(readlink -f "$OUTDIR")"
